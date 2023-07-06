@@ -1,0 +1,325 @@
+﻿@model GlobalViewModel
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+@{
+    var items = ViewBag.Items as SelectList;
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Index Page</title>
+    <style>
+        /* Başlık için CSS */
+        .header {
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Butonlar için CSS */
+        .button-container {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+            .button-container button {
+                margin: 5px;
+            }
+    </style>
+</head>
+<body>
+    
+        <div class="header">
+            <h1>Origin & Destination Selection</h1>
+        </div>
+
+        
+
+        <!-- Başlangıç Noktası Seçimi -->
+        <label for="origin">Origin:</label>
+        <div class="input-group">
+
+            <div class="input-wrapper">
+                @Html.DropDownList("Origin", (IEnumerable<SelectListItem>)ViewBag.drop, "Seçiniz",new { @id = "origin-dropdown" })
+            </div>
+
+
+            @*    <ul id="origin-dropdown" class="dropdown-list">
+            <li data-value="istanbul">İstanbul</li>
+            <li data-value="ankara">Ankara</li>
+            <li data-value="izmir">İzmir</li>
+            <li data-value="adana">Adana</li>
+            <li data-value="bursa">Bursa</li>
+            <li data-value="antalya">Antalya</li>
+            </ul>*@
+
+        </div>
+
+        <!-- Varış Noktası Seçimi -->
+        <label for="destination">Destination:</label>
+        <div class="input-group">
+            <div class="input-wrapper">
+                @Html.DropDownList("Destination", (IEnumerable<SelectListItem>)ViewBag.drop2, "Seçiniz",new { @id = "destination-dropdown" })
+            </div>
+
+            @*    <ul id="destination-dropdown" class="dropdown-list">
+            <li data-value="istanbul">İstanbul</li>
+            <li data-value="ankara">Ankara</li>
+            <li data-value="izmir">İzmir</li>
+            <li data-value="adana">Adana</li>
+            <li data-value="bursa">Bursa</li>
+            <li data-value="antalya">Antalya</li>
+            </ul>*@
+        </div>
+
+        <!-- Kalkış Tarihi Seçimi -->
+        <label for="departure-date">Departure Date:</label>
+        <div class="input-group">
+            <input type="date" id="departure-date" name="departure-date">
+        </div>
+
+        <!-- Takas Düğmesi -->
+        <button id="swap-button">Swap</button>
+
+        <!-- Butonlar Container -->
+        <div class="button-container">
+            <!-- Hızlı Seçim Düğmeleri -->
+            <button id="today-button">Today</button>
+            <button id="tomorrow-button">Tomorrow</button>
+
+            <!-- Arama Düğmesi -->
+            <button id="search-button" onclick="myFunction()" >Search</button>
+        </div>
+ 
+    <!-- İndeks sayfası içeriği -->
+    <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        function swapValues() {
+            var veriId = $("#origin-dropdown").val();
+            var digerListe = $("#destination-dropdown").val();
+
+            // Değerleri yer değiştir
+            $("#origin-dropdown").val(digerListe);
+            $("#destination-dropdown").val(veriId);
+        }
+    </script>
+    <script>
+    function myFunction() {
+        var dates=document.getElementById("departure-date");
+        var val=document.getElementById("origin-dropdown");
+        var val2=document.getElementById("destination-dropdown");
+        debugger;
+        if(val.value ==null|| val.value==""){
+            alert('Error: ' + "bir istasyon seçmelisiniz");
+            return;
+        }
+        if (val2.value == null|| val2.value=="") {
+                 alert('Error: ' + "bir istasyon seçmelisiniz");
+            return;
+        }
+        if (val.value == val2.value) {
+            alert('Error: ' + "Kalkış Noktasıyla Varış Noktası Aynı Olamaz");
+            return;
+        }
+        // AJAX isteğini burada gerçekleştirin
+        $.ajax({
+            url: '/GetBusLocations/Index', // İstek gönderilecek URL'i belirtin
+            type: 'POST', // İstek yöntemini belirtin (GET, POST, vb.)
+            data: { val1: val.value, val2:val2.value, date:dates.value }, // İsteğe veri göndermek isterseniz kullanabilirsiniz
+            success: function (response) {
+                // İstek başarılı olduğunda yapılacak işlemler
+                window.location.href = '/GetBusLocations/GetBusJourneyList';
+             
+                return;
+            },
+            error: function (xhr, status, error) {
+                // İstek başarısız olduğunda yapılacak işlemler
+                window.location.href = '/GetBusLocations/GetBusJourneyList';
+                return;
+            }
+        });
+    }
+</script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $("#name").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "/GetBusLocations/GetCountries",
+                        type: "POST",
+                        dataType: "json",
+                        data: { Prefix: request.term },
+                        success: function(data) {
+                            response($.map(data, function(item) {
+                                return { label: item.Name, value: item.Name };
+                            }));
+                        }
+                    });
+                },
+                messages: {
+                    noResults: "",
+                    results: function(count) {
+                        return count + (count > 1 ? ' results' : ' result ') + ' found';
+                    }
+                }
+            });
+        });
+    </script>
+    <script>
+        // Departure Date için default değeri ve geçmiş tarihlerin engellenmesi
+        var departureDateInput = document.getElementById("departure-date");
+        var todayButton = document.getElementById("today-button");
+        var tomorrowButton = document.getElementById("tomorrow-button");
+
+
+        // Bugünün tarihini al
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+
+        // Bir sonraki günün tarihini al
+        var tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+
+        today = new Date();
+        // Departure Date alanına min ve default değerlerini ata
+        departureDateInput.setAttribute("min", today.toISOString().split('T')[0]);
+        departureDateInput.value = tomorrow.toISOString().split('T')[0];
+
+        // Today Button'a tıklandığında bugünün tarihini ata
+        todayButton.addEventListener("click", function() {
+            console.log(today = new Date());
+            departureDateInput.value = today.toISOString().split('T')[0];
+        });
+
+        // Tomorrow Button'a tıklandığında bir sonraki günün tarihini ata
+        tomorrowButton.addEventListener("click", function() {
+            var selectedDate = new Date(departureDateInput.value);
+            selectedDate.setDate(selectedDate.getDate() + 1);
+            departureDateInput.value = selectedDate.toISOString().split('T')[0];
+        });
+
+        // Departure Date alanındaki geçmiş tarihleri engelle
+        departureDateInput.addEventListener("input", function() {
+            console.log(departureDateInput.value);
+            var selectedDate = new Date(departureDateInput.value);
+            if (selectedDate < today) {
+                console.log(today = new Date());
+                departureDateInput.value = today.toISOString().split('T')[0];
+            }
+        });
+    </script>
+    <script>
+        // Kalkış Noktası
+
+        var originInput = document.getElementById('origin-input');
+        var originDropdown = document.getElementById('origin-dropdown');
+        var originDropdownBtn = document.getElementById('origin-dropdown-btn');
+        const swapButton = document.getElementById('swap-button');
+
+
+        function filterOriginDropdown() {
+            var originInput = document.getElementById('origin-input');
+            var searchValue = originInput.value.toLowerCase();
+            var options = originDropdown.getElementsByTagName('li');
+
+            for (var i = 0; i < options.length; i++) {
+                var option = options[i];
+                var text = option.textContent.toLowerCase();
+
+                if (text.includes(searchValue)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        }
+
+        originInput.addEventListener('input', filterOriginDropdown);
+
+
+
+        swapButton.addEventListener('click', function() {
+            const temp = originInput.value;
+            originInput.value = destinationInput.value;
+            destinationInput.value = temp;
+            filterDestinationDropdown();
+            filterOriginDropdown();
+
+
+        });
+
+
+        originDropdown.addEventListener('click', function(event) {
+            var selectedOption = event.target;
+            var value = selectedOption.getAttribute('data-value');
+            var text = selectedOption.textContent;
+
+            originInput.value = text;
+        });
+
+        originDropdownBtn.addEventListener('click', function() {
+            originDropdown.classList.toggle('open');
+        });
+
+
+        // Varış Noktası
+        var destinationInput = document.getElementById('destination-input');
+        var destinationDropdown = document.getElementById('destination-dropdown');
+        var destinationDropdownBtn = document.getElementById('destination-dropdown-btn');
+
+
+        function filterDestinationDropdown() {
+            var destinationInput = document.getElementById('destination-input');
+            var searchValue = destinationInput.value.toLowerCase();
+            var options = destinationDropdown.getElementsByTagName('li');
+
+            for (var i = 0; i < options.length; i++) {
+                var option = options[i];
+                var text = option.textContent.toLowerCase();
+
+                if (text.includes(searchValue)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        }
+
+        destinationInput.addEventListener('input', filterDestinationDropdown);
+
+
+
+        destinationDropdown.addEventListener('click', function(event) {
+            var selectedOption = event.target;
+            var value = selectedOption.getAttribute('data-value');
+            var text = selectedOption.textContent;
+
+            destinationInput.value = text;
+        });
+
+        destinationDropdownBtn.addEventListener('click', function() {
+            destinationDropdown.classList.toggle('open');
+        });
+
+    </script>
+</body>
+</html>
+
+
+
+
